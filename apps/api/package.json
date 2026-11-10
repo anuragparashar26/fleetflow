@@ -1,0 +1,20 @@
+{
+  "name": "@project-a/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@clerk/backend": "^3.2.3",
+    "@project-a/db": "*",
+    "@clerk/express": "^2.0.7",
+    "@supabase/supabase-js": "^2.101.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3"
+  }
+}

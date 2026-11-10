@@ -1,0 +1,21 @@
+{
+  "name": "fleetflow",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @project-a/web",
+    "dev:web": "npm run dev -w @project-a/web",
+    "dev:api": "npm run dev -w @project-a/api",
+    "build": "npm run build -w @project-a/web",
+    "lint": "npm run lint -w @project-a/web",
+    "preview": "npm run preview -w @project-a/web",
+    "prisma:generate": "npm run prisma:generate -w @project-a/db",
+    "prisma:migrate": "npm run prisma:migrate -w @project-a/db",
+    "prisma:studio": "npm run prisma:studio -w @project-a/db"
+  }
+}

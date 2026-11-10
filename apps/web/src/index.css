@@ -1,0 +1,119 @@
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Root — Light theme force ── */
+:root {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  color: #111827;
+  background-color: #F9FAFB;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Full screen layout ── */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #F9FAFB;
+}
+
+/* ── Links ── */
+a {
+  font-weight: 500;
+  color: #4F46E5;
+  text-decoration: none;
+}
+a:hover {
+  color: #4338CA;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 {
+  color: #111827;
+  line-height: 1.2;
+}
+
+/* ── Buttons — reset Vite defaults ── */
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+button:focus,
+button:focus-visible {
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
+}
+
+/* ── Inputs — force white background ── */
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+/* Light mode */
+body.light input,
+body.light textarea,
+body.light select {
+  color: #111827;
+}
+
+/* Dark mode */
+body.dark input,
+body.dark textarea,
+body.dark select {
+  color: #f3f3f3;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9CA3AF !important;
+}
+
+/* ── Fix browser autofill dark background ── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F3F4F6;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}

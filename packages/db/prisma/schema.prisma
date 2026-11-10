@@ -1,0 +1,530 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// Platform (multi-tenant foundation)
+// ============================================================================
+
+model Profile {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clerkUserId String   @unique @map("clerk_user_id")
+  email       String?
+  fullName    String?  @map("full_name")
+  username    String?
+  phone       String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspaceMemberships WorkspaceMember[] @relation("UserMemberships")
+  createdShipments     Shipment[]        @relation("CreatedShipments")
+  comments             Comment[]         @relation("ShipmentCommentAuthors")
+
+  @@map("profiles")
+}
+
+model Workspace {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  members          WorkspaceMember[]
+  boards           Board[]
+  labels           Label[]
+  shippers         Shipper[]
+  vehicles         Vehicle[]
+  drivers          Driver[]
+  routes           Route[]
+  trips            Trip[]
+  shipments        Shipment[]
+  activities       Activity[]
+  serviceTypes     ServiceType[]
+  maintenancePlans MaintenancePlan[]
+  serviceRecords   ServiceRecord[]
+  fuelRecords      FuelRecord[]
+  driverPayouts    DriverPayout[]
+  notifications    Notification[]
+  auditEvents      AuditEvent[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id")
+  role        String   @default("member")
+  joinedAt    DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      Profile   @relation("UserMemberships", fields: [userId], references: [clerkUserId], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Notification {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  recipientId String   @map("recipient_id")
+  type        String
+  title       String
+  message     String?
+  entityType  String?  @map("entity_type")
+  entityId    String?  @map("entity_id") @db.Uuid
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model AuditEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  actorId     String   @map("actor_id")
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id") @db.Uuid
+  action      String
+  oldValues   Json?    @map("old_values")
+  newValues   Json?    @map("new_values")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("audit_events")
+}
+
+// ============================================================================
+// Fleet domain — Customers
+// ============================================================================
+
+model Shipper {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  name         String
+  industry     String?
+  website      String?
+  city         String?
+  contactName  String?  @map("contact_name")
+  contactEmail String?  @map("contact_email")
+  contactPhone String?  @map("contact_phone")
+  status       String   @default("active")
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shipments  Shipment[]
+  activities Activity[]
+
+  @@unique([workspaceId, name])
+  @@map("shippers")
+}
+
+// ============================================================================
+// Fleet domain — Fleet assets & people
+// ============================================================================
+
+model Vehicle {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  regNumber   String   @map("reg_number")
+  type        String   @default("truck")
+  make        String?
+  model       String?
+  year        Int?
+  capacityKg  Decimal? @map("capacity_kg") @db.Decimal
+  fuelType    String   @default("diesel") @map("fuel_type")
+  odometerKm  Int      @default(0) @map("odometer_km")
+  status      String   @default("idle")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trips            Trip[]
+  fuelRecords      FuelRecord[]
+  serviceRecords   ServiceRecord[]
+  maintenancePlans MaintenancePlan[]
+  activities       Activity[]
+
+  @@unique([workspaceId, regNumber])
+  @@map("vehicles")
+}
+
+model Driver {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId   String    @map("workspace_id") @db.Uuid
+  userId        String?   @map("user_id")
+  employeeCode  String?   @map("employee_code")
+  firstName     String    @map("first_name")
+  lastName      String?   @map("last_name")
+  email         String?
+  phone         String?
+  licenseNumber String?   @map("license_number")
+  licenseExpiry DateTime? @map("license_expiry") @db.Date
+  status        String    @default("available")
+  joinedAt      DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace         Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  trips             Trip[]
+  assignedShipments ShipmentDriver[]
+  payouts           DriverPayout[]
+  activities        Activity[]
+
+  @@unique([workspaceId, employeeCode])
+  @@map("drivers")
+}
+
+// ============================================================================
+// Fleet domain — Routes & trips
+// ============================================================================
+
+model Route {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  name             String
+  originCity       String?  @map("origin_city")
+  destinationCity  String?  @map("destination_city")
+  distanceKm       Int?     @map("distance_km")
+  estimatedMinutes Int?     @map("estimated_minutes")
+  status           String   @default("active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  stops     RouteStop[]
+  trips     Trip[]
+
+  @@unique([workspaceId, name])
+  @@map("routes")
+}
+
+model RouteStop {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  routeId  String  @map("route_id") @db.Uuid
+  name     String
+  city     String?
+  position Int
+  stopType String  @default("delivery") @map("stop_type")
+
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@map("route_stops")
+}
+
+model Trip {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  routeId     String?   @map("route_id") @db.Uuid
+  vehicleId   String    @map("vehicle_id") @db.Uuid
+  driverId    String    @map("driver_id") @db.Uuid
+  origin      String
+  destination String
+  status      String    @default("planned")
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  distanceKm  Int?      @map("distance_km")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  route       Route?       @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  driver      Driver       @relation(fields: [driverId], references: [id], onDelete: Restrict)
+  shipments   Shipment[]
+  fuelRecords FuelRecord[]
+  activities  Activity[]
+
+  @@map("trips")
+}
+
+// ============================================================================
+// Fleet domain — Shipment board (kanban) & shipments
+// ============================================================================
+
+model Board {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String
+  type        String   @default("kanban")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  columns   ColumnStatus[]
+  shipments Shipment[]
+
+  @@map("boards")
+}
+
+model ColumnStatus {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  boardId  String @map("board_id") @db.Uuid
+  name     String
+  position Int
+  color    String @default("#6B7280")
+
+  board           Board                   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  shipments       Shipment[]
+  statusHistoryTo ShipmentStatusHistory[] @relation("ColumnToHistory")
+
+  @@map("column_statuses")
+}
+
+model Shipment {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId   String    @map("workspace_id") @db.Uuid
+  boardId       String    @map("board_id") @db.Uuid
+  columnId      String?   @map("column_id") @db.Uuid
+  shipperId     String?   @map("shipper_id") @db.Uuid
+  tripId        String?   @map("trip_id") @db.Uuid
+  trackingNo    String    @map("tracking_no")
+  title         String
+  description   String?
+  origin        String
+  destination   String
+  priority      String    @default("normal")
+  position      Int       @default(0)
+  weightKg      Decimal?  @map("weight_kg") @db.Decimal
+  declaredValue Decimal?  @map("declared_value") @db.Decimal
+  codAmount     Decimal?  @map("cod_amount") @db.Decimal
+  pickupAt      DateTime? @map("pickup_at") @db.Timestamptz(6)
+  deliveryDueAt DateTime? @map("delivery_due_at") @db.Timestamptz(6)
+  createdBy     String    @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  board   Board         @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  column  ColumnStatus? @relation(fields: [columnId], references: [id], onDelete: SetNull)
+  shipper Shipper?      @relation(fields: [shipperId], references: [id], onDelete: SetNull)
+  trip    Trip?         @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  creator Profile       @relation("CreatedShipments", fields: [createdBy], references: [clerkUserId], onDelete: Restrict)
+
+  drivers       ShipmentDriver[]
+  items         ShipmentItem[]
+  labels        ShipmentLabel[]
+  comments      Comment[]
+  statusHistory ShipmentStatusHistory[]
+  activities    Activity[]
+  workspace     Workspace               @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, trackingNo])
+  @@map("shipments")
+}
+
+model ShipmentDriver {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipmentId String @map("shipment_id") @db.Uuid
+  driverId   String @map("driver_id") @db.Uuid
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  driver   Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@unique([shipmentId, driverId])
+  @@map("shipment_drivers")
+}
+
+model ShipmentItem {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipmentId    String   @map("shipment_id") @db.Uuid
+  description   String
+  quantity      Int      @default(1)
+  weightKg      Decimal? @map("weight_kg") @db.Decimal
+  declaredValue Decimal? @map("declared_value") @db.Decimal
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@map("shipment_items")
+}
+
+model Label {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String @map("workspace_id") @db.Uuid
+  name        String
+  color       String
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shipments ShipmentLabel[]
+
+  @@unique([workspaceId, name])
+  @@map("labels")
+}
+
+model ShipmentLabel {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipmentId String @map("shipment_id") @db.Uuid
+  labelId    String @map("label_id") @db.Uuid
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  label    Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([shipmentId, labelId])
+  @@map("shipment_labels")
+}
+
+model Comment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipmentId String   @map("shipment_id") @db.Uuid
+  authorId   String   @map("author_id")
+  body       String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  author   Profile  @relation("ShipmentCommentAuthors", fields: [authorId], references: [clerkUserId], onDelete: Restrict)
+
+  @@map("comments")
+}
+
+model ShipmentStatusHistory {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipmentId   String   @map("shipment_id") @db.Uuid
+  fromColumnId String?  @map("from_column_id") @db.Uuid
+  toColumnId   String   @map("to_column_id") @db.Uuid
+  movedBy      String   @map("moved_by")
+  movedAt      DateTime @default(now()) @map("moved_at") @db.Timestamptz(6)
+
+  shipment Shipment     @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  toColumn ColumnStatus @relation("ColumnToHistory", fields: [toColumnId], references: [id], onDelete: Cascade)
+
+  @@map("shipment_status_history")
+}
+
+model Activity {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  type        String
+  title       String
+  note        String?
+  occurredAt  DateTime? @map("occurred_at") @db.Timestamptz(6)
+  isCompleted Boolean   @default(false) @map("is_completed")
+  createdBy   String    @map("created_by")
+  shipmentId  String?   @map("shipment_id") @db.Uuid
+  tripId      String?   @map("trip_id") @db.Uuid
+  vehicleId   String?   @map("vehicle_id") @db.Uuid
+  driverId    String?   @map("driver_id") @db.Uuid
+  shipperId   String?   @map("shipper_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shipment  Shipment? @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
+  trip      Trip?     @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  vehicle   Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  driver    Driver?   @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  shipper   Shipper?  @relation(fields: [shipperId], references: [id], onDelete: SetNull)
+
+  @@map("activities")
+}
+
+// ============================================================================
+// Fleet domain — Maintenance & fuel
+// ============================================================================
+
+model ServiceType {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  name         String
+  intervalDays Int?     @map("interval_days")
+  intervalKm   Int?     @map("interval_km")
+  isPlanned    Boolean  @default(true) @map("is_planned")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  maintenancePlans MaintenancePlan[]
+  serviceRecords   ServiceRecord[]
+
+  @@unique([workspaceId, name])
+  @@map("service_types")
+}
+
+model MaintenancePlan {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId   String    @map("workspace_id") @db.Uuid
+  vehicleId     String    @map("vehicle_id") @db.Uuid
+  serviceTypeId String    @map("service_type_id") @db.Uuid
+  lastDoneAt    DateTime? @map("last_done_at") @db.Date
+  nextDueDate   DateTime? @map("next_due_date") @db.Date
+  nextDueKm     Int?      @map("next_due_km")
+
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  serviceType ServiceType @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, serviceTypeId])
+  @@map("maintenance_plans")
+}
+
+model ServiceRecord {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId   String    @map("workspace_id") @db.Uuid
+  vehicleId     String    @map("vehicle_id") @db.Uuid
+  serviceTypeId String    @map("service_type_id") @db.Uuid
+  startDate     DateTime  @map("start_date") @db.Date
+  endDate       DateTime? @map("end_date") @db.Date
+  status        String    @default("scheduled")
+  cost          Decimal   @default(0) @db.Decimal
+  odometerKm    Int?      @map("odometer_km")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  serviceType ServiceType @relation(fields: [serviceTypeId], references: [id], onDelete: Restrict)
+
+  @@map("service_records")
+}
+
+model FuelRecord {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  vehicleId   String   @map("vehicle_id") @db.Uuid
+  tripId      String?  @map("trip_id") @db.Uuid
+  recordedAt  DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  liters      Decimal  @db.Decimal
+  amount      Decimal  @db.Decimal
+  odometerKm  Int?     @map("odometer_km")
+  station     String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  trip      Trip?     @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@map("fuel_records")
+}
+
+// ============================================================================
+// Fleet domain — Driver payouts
+// ============================================================================
+
+model DriverPayout {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  driverId    String    @map("driver_id") @db.Uuid
+  periodStart DateTime  @map("period_start") @db.Date
+  periodEnd   DateTime  @map("period_end") @db.Date
+  basePay     Decimal   @map("base_pay") @db.Decimal
+  bonuses     Decimal   @default(0) @db.Decimal
+  deductions  Decimal   @default(0) @db.Decimal
+  netPay      Decimal   @map("net_pay") @db.Decimal
+  status      String    @default("draft")
+  paidAt      DateTime? @map("paid_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  driver    Driver    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("driver_payouts")
+}
