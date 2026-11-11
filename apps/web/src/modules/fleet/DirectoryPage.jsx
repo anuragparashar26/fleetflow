@@ -38,7 +38,7 @@ function StatusCell({ status, theme }) {
 function ArrowRoute({ from, to, theme }) {
   return (
     <span style={{ color: theme.text }}>
-      {orDash(from)} <span style={{ fontWeight: 700, padding: "0 3px" }}>→</span> {orDash(to)}
+      {orDash(from)} <span style={{ fontWeight: 700, padding: "0 3px" }}>to</span> {orDash(to)}
     </span>
   );
 }

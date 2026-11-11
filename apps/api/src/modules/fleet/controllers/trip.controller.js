@@ -71,6 +71,9 @@ export async function createTrip(req, res, next) {
         data: { status: "on_trip" },
       });
       return trip;
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     });
 
     res.status(201).json({ data });
@@ -142,6 +145,9 @@ export async function updateTrip(req, res, next) {
       }
 
       return tx.trip.findUnique({ where: { id: trip.id }, include: tripInclude });
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     });
 
     res.json({ data });

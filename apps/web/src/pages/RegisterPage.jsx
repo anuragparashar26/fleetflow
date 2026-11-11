@@ -2,17 +2,7 @@ import { useMemo, useState } from "react";
 import { useSignUp } from "@clerk/clerk-react";
 import { useAuth } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
-import { EyeIcon, EyeOffIcon, GoogleIcon, MailIcon, WarningIcon } from "../components/icons";
-
-const isGoogleLinkedAccountError = (clerkError) => {
-  const code = clerkError?.code || "";
-  const message = (clerkError?.message || "").toLowerCase();
-
-  if (code === "strategy_for_user_invalid") return true;
-  if (message.includes("google") || message.includes("oauth") || message.includes("social")) return true;
-
-  return false;
-};
+import { EyeIcon, EyeOffIcon, MailIcon, WarningIcon } from "../components/icons";
 
 const Field = ({ label, children, error }) => (
   <div style={{ marginBottom: "16px" }}>
@@ -38,14 +28,6 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { getToken } = useAuth();
   const location = useLocation();
-
-  const getAuthRedirectUrls = () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return {
-      redirectUrl: `${origin}/sso-callback`,
-      redirectUrlComplete: `${origin}/fleet/dashboard`,
-    };
-  };
 
   const invitationTicket = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -128,10 +110,7 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
     } catch (err) {
       const clerkError = err?.errors?.[0];
       const message = (clerkError?.message || "").toLowerCase();
-      if (isGoogleLinkedAccountError(clerkError)) {
-        setFieldErrors((p) => ({ ...p, email: "This email is linked with Google." }));
-        setTopError("This account already exists. Please sign in with Google.");
-      } else if (clerkError?.code === "form_identifier_exists") {
+      if (clerkError?.code === "form_identifier_exists") {
         setFieldErrors((p) => ({ ...p, email: "This email is already registered." }));
         setTopError("This email is already registered. Please sign in with your existing account.");
       } else if (message.includes("ticket") || message.includes("invite") || message.includes("invitation")) {
@@ -140,26 +119,6 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
         setTopError(clerkError?.message || "Registration failed. Please try again.");
       }
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignup = async () => {
-    if (!isLoaded) {
-      setTopError("Auth is loading, please wait...");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { redirectUrl, redirectUrlComplete } = getAuthRedirectUrls();
-      await signUp.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl,
-        redirectUrlComplete,
-      });
-    } catch (err) {
-      setTopError(err?.errors?.[0]?.message || "Unable to continue with Google.");
       setLoading(false);
     }
   };
@@ -224,13 +183,6 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
     return (
       <div style={s.page}>
         <div style={{ ...s.card, maxWidth: "420px", padding: "40px 44px" }}>
-          <div style={s.logoRow}>
-            <div style={s.logoIcon}>L</div>
-            <span style={s.logoText}>
-              Fleet<span style={s.logoAccent}>Flow</span>
-            </span>
-          </div>
-
           <div style={{ textAlign: "center", marginBottom: "28px" }}>
             <div style={{ marginBottom: "12px" }}>
               <MailIcon size={44} color="#4F46E5" />
@@ -263,7 +215,7 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
           </div>
 
           <button style={{ ...s.primaryBtn, opacity: loading ? 0.75 : 1 }} onClick={handleVerify} disabled={loading}>
-            {loading ? "Verifying..." : "Verify & Create Account →"}
+            {loading ? "Verifying..." : "Verify & Create Account"}
           </button>
 
           <div style={{ textAlign: "center", marginTop: "16px" }}>
@@ -279,13 +231,6 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
   return (
     <div style={s.page}>
       <div style={{ ...s.card, maxWidth: "480px", padding: "36px 40px" }}>
-        <div style={s.logoRow}>
-          <div style={s.logoIcon}>L</div>
-          <span style={s.logoText}>
-            Fleet<span style={s.logoAccent}>Flow</span>
-          </span>
-        </div>
-
         <div style={s.heading}>Create Account</div>
         <div style={s.subheading}>
           {hasInvitationTicket
@@ -304,21 +249,6 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
             <WarningIcon size={14} color="#DC2626" /> {topError}
           </div>
         )}
-
-        <button
-          style={{ ...s.googleBtn, opacity: loading || !isLoaded ? 0.75 : 1 }}
-          onClick={handleGoogleSignup}
-          disabled={loading || !isLoaded}
-        >
-          <GoogleIcon size={18} />
-          Continue with Google
-        </button>
-
-        <div style={s.divider}>
-          <div style={s.dividerLine} />
-          <span style={s.dividerText}>OR</span>
-          <div style={s.dividerLine} />
-        </div>
 
         <Field label="Email" error={fieldErrors.email}>
           <input
@@ -368,7 +298,7 @@ export default function RegisterPage({ onRegisterSuccess, onBackToLogin }) {
           onClick={handleSubmit}
           disabled={loading || !isLoaded}
         >
-          {loading ? "Creating Account..." : "Create Account →"}
+          {loading ? "Creating Account..." : "Create Account"}
         </button>
 
         <div style={{ textAlign: "center", marginTop: "20px", fontSize: "13px", color: "#6B7280" }}>
@@ -383,7 +313,7 @@ const s = {
   page: {
     minHeight: "100vh",
     width: "100%",
-    background: "linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #EDE9FE 100%)",
+    background: "radial-gradient(circle at 15% 10%, rgba(37,99,235,.22), transparent 28rem), #080B12",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -392,18 +322,18 @@ const s = {
     boxSizing: "border-box",
   },
   card: {
-    background: "#FFFFFF",
+    background: "#0E1524",
     borderRadius: "20px",
     width: "100%",
-    boxShadow: "0 4px 6px rgba(79,70,229,0.04), 0 20px 60px rgba(79,70,229,0.12)",
-    border: "1px solid rgba(79,70,229,0.08)",
+    boxShadow: "0 24px 80px rgba(0,0,0,.35)",
+    border: "1px solid #1E293B",
     boxSizing: "border-box",
   },
   logoRow: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" },
   logoIcon: {
     width: "36px",
     height: "36px",
-    background: "#4F46E5",
+    background: "linear-gradient(135deg,#2563EB,#06B6D4)",
     borderRadius: "10px",
     display: "flex",
     alignItems: "center",
@@ -412,10 +342,10 @@ const s = {
     fontWeight: "800",
     fontSize: "18px",
   },
-  logoText: { fontSize: "22px", fontWeight: "800", color: "#1E1B4B", letterSpacing: "-0.5px" },
-  logoAccent: { color: "#4F46E5" },
-  heading: { fontSize: "24px", fontWeight: "700", color: "#1E1B4B", marginBottom: "6px", letterSpacing: "-0.3px" },
-  subheading: { fontSize: "14px", color: "#6B7280", marginBottom: "22px", lineHeight: "1.5" },
+  logoText: { fontSize: "22px", fontWeight: "800", color: "#F8FAFC", letterSpacing: "-0.5px" },
+  logoAccent: { color: "#38BDF8" },
+  heading: { fontSize: "24px", fontWeight: "700", color: "#F8FAFC", marginBottom: "6px", letterSpacing: "-0.3px" },
+  subheading: { fontSize: "14px", color: "#94A3B8", marginBottom: "22px", lineHeight: "1.5" },
   errorBox: {
     background: "#FEF2F2",
     border: "1px solid #FECACA",
@@ -441,14 +371,14 @@ const s = {
     gap: "8px",
   },
   fieldError: { fontSize: "12px", color: "#DC2626", marginTop: "5px", display: "flex", alignItems: "center", gap: "6px" },
-  label: { display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" },
+  label: { display: "block", fontSize: "13px", fontWeight: "600", color: "#CBD5E1", marginBottom: "6px" },
   input: {
     width: "100%",
     padding: "11px 14px",
     borderRadius: "10px",
-    border: "1.5px solid #E5E7EB",
+    border: "1.5px solid #26364F",
     fontSize: "14px",
-    color: "#111827",
+    color: "#F8FAFC",
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "inherit",
@@ -469,9 +399,9 @@ const s = {
     width: "100%",
     padding: "12px",
     borderRadius: "10px",
-    border: "1.5px solid #D1D5DB",
-    background: "#FFFFFF",
-    color: "#111827",
+    border: "1.5px solid #26364F",
+    background: "#111B2E",
+    color: "#E2E8F0",
     fontSize: "14px",
     fontWeight: "600",
     cursor: "pointer",
@@ -486,7 +416,7 @@ const s = {
     padding: "13px",
     borderRadius: "10px",
     border: "none",
-    background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+    background: "linear-gradient(135deg, #2563EB, #06B6D4)",
     color: "#fff",
     fontSize: "15px",
     fontWeight: "700",
@@ -497,7 +427,7 @@ const s = {
     letterSpacing: "0.2px",
   },
   divider: { display: "flex", alignItems: "center", gap: "12px", margin: "16px 0 18px" },
-  dividerLine: { flex: 1, height: "1px", background: "#E5E7EB" },
+  dividerLine: { flex: 1, height: "1px", background: "#1E293B" },
   dividerText: { fontSize: "12px", color: "#9CA3AF", fontWeight: "500" },
   linkBtn: {
     background: "none",

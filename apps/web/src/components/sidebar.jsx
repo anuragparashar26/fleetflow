@@ -7,12 +7,12 @@ const NAV_ITEMS = [
   { path: "/fleet/dashboard", label: "Dashboard", icon: "⊙", exact: true },
   { section: "OPERATIONS" },
   { path: "/fleet/shippers", label: "Shippers", icon: "▤" },
-  { path: "/fleet/routes", label: "Routes", icon: "⇄" },
+  { path: "/fleet/routes", label: "Routes", icon: "•" },
   { path: "/fleet/activities", label: "Activities", icon: "◷" },
   { section: "FLEET" },
   { path: "/fleet/vehicles", label: "Vehicles", icon: "▣" },
   { path: "/fleet/drivers", label: "Drivers", icon: "◉" },
-  { path: "/fleet/trips", label: "Trips", icon: "➤" },
+  { path: "/fleet/trips", label: "Trips", icon: "•" },
 ];
 
 export default function Sidebar({
@@ -85,10 +85,8 @@ export default function Sidebar({
   return (
     <aside style={{ ...styles.sidebar, background: theme.bg, borderRightColor: theme.border }}>
 
-      {/* Logo */}
-      <div style={{ ...styles.logoRow, borderBottomColor: theme.border }}>
-        <div style={styles.logoIcon}>S</div>
-        <span style={{ ...styles.logoText, color: theme.text }}>FleetFlow</span>
+      <div style={{ ...styles.workspaceHint, color: theme.muted }}>
+        <span style={styles.statusDot} /> Operations console
       </div>
 
       {/* Nav */}
@@ -137,11 +135,6 @@ export default function Sidebar({
             <div style={{ ...styles.userName, color: theme.text }}>{displayName}</div>
             <div style={{ ...styles.userEmail, color: theme.muted }}>{email}</div>
           </div>
-          <span style={{
-            ...styles.chevron,
-            color: theme.muted,
-            transform: showLogoutMenu ? "rotate(180deg)" : "rotate(0deg)",
-          }}>▲</span>
         </button>
 
         {showLogoutMenu && (
@@ -199,20 +192,20 @@ const LIGHT = {
 };
 
 const DARK = {
-  bg: "#1E293B",
-  border: "#334155",
-  text: "#F1F5F9",
+  bg: "#0B1120",
+  border: "#1E293B",
+  text: "#F8FAFC",
   navText: "#CBD5E1",
-  muted: "#64748B",
-  icon: "#94A3B8",
-  activeItemBg: "#312E81",
-  activeItemColor: "#A5B4FC",
-  menuBg: "#0F172A",
+  muted: "#718096",
+  icon: "#60A5FA",
+  activeItemBg: "linear-gradient(90deg, rgba(37,99,235,0.28), rgba(14,165,233,0.08))",
+  activeItemColor: "#93C5FD",
+  menuBg: "#111B2E",
 };
 
 const styles = {
   sidebar: {
-    width: "240px", minWidth: "240px",
+    width: "260px", minWidth: "260px",
     height: "100vh",
     display: "flex", flexDirection: "column",
     fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
@@ -223,15 +216,17 @@ const styles = {
   },
   logoRow: {
     display: "flex", alignItems: "center", gap: "10px",
-    padding: "20px 16px", borderBottom: "1px solid",
+    padding: "24px 20px 18px", borderBottom: "1px solid",
   },
   logoIcon: {
-    width: "28px", height: "28px",
-    background: "#4F46E5", borderRadius: "6px",
+    width: "32px", height: "32px",
+    background: "linear-gradient(135deg, #2563EB, #06B6D4)", borderRadius: "8px",
     display: "flex", alignItems: "center", justifyContent: "center",
     color: "#fff", fontWeight: "700", fontSize: "14px", flexShrink: 0,
   },
-  logoText: { fontSize: "15px", fontWeight: "700" },
+  logoText: { fontSize: "16px", fontWeight: "800", letterSpacing: "-.3px" },
+  workspaceHint: { padding: "14px 20px 4px", fontSize: "10px", letterSpacing: "1.1px", textTransform: "uppercase", fontWeight: "700", display: "flex", gap: "8px", alignItems: "center" },
+  statusDot: { width: "6px", height: "6px", borderRadius: "50%", background: "#34D399", boxShadow: "0 0 0 3px rgba(52,211,153,.12)" },
   moduleTabs: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -249,14 +244,14 @@ const styles = {
     fontFamily: "inherit",
   },
   nav: {
-    flex: 1, padding: "12px 8px",
+    flex: 1, padding: "18px 12px",
     display: "flex", flexDirection: "column", gap: "2px",
   },
   navItem: {
-    display: "flex", alignItems: "center", gap: "10px",
-    width: "100%", padding: "8px 12px",
+    display: "flex", alignItems: "center", gap: "12px",
+    width: "100%", padding: "11px 13px",
     border: "none", borderRadius: "8px",
-    fontSize: "14px", cursor: "pointer", textAlign: "left",
+    fontSize: "13px", cursor: "pointer", textAlign: "left",
     transition: "background 0.15s", fontFamily: "inherit",
   },
   sectionLabel: {

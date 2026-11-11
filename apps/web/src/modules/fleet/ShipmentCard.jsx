@@ -53,7 +53,7 @@ export default function ShipmentCard({ shipment, onClick, darkMode = false }) {
       </div>
 
       <div style={{ ...localStyles.route, color: theme.muted }}>
-        {shipment?.origin || "?"} <span style={localStyles.arrow}>→</span> {shipment?.destination || "?"}
+        {shipment?.origin || "?"} <span style={localStyles.arrow}>to</span> {shipment?.destination || "?"}
       </div>
 
       {shipment?.shipper?.name && (

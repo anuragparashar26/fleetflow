@@ -9,7 +9,7 @@ const styles = {
     top: 0, left: 0,
     width: "100vw",
     height: "100vh",
-    background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
+    background: "radial-gradient(circle at 15% 10%, rgba(37,99,235,.22), transparent 28rem), #080B12",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -19,9 +19,9 @@ const styles = {
 
   // ── Glass card (login / forgot / reset) ──
   card: {
-    background: "rgba(255,255,255,0.05)",
+    background: "#0E1524",
     backdropFilter: "blur(20px)",
-    border: "1px solid rgba(255,255,255,0.15)",
+    border: "1px solid #1E293B",
     borderRadius: "20px",
     padding: "48px 40px",
     width: "100%",
@@ -61,10 +61,10 @@ const styles = {
 
   btn: {
     width: "100%", padding: "14px", borderRadius: "10px", border: "none",
-    background: "linear-gradient(135deg, #7c6af7, #6c63ff)",
+    background: "linear-gradient(135deg, #2563EB, #06B6D4)",
     color: "#fff", fontSize: "15px", fontWeight: "700",
     cursor: "pointer", marginTop: "8px", letterSpacing: "0.5px",
-    boxShadow: "0 4px 20px rgba(124,106,247,0.4)", transition: "opacity 0.2s",
+    boxShadow: "0 8px 24px rgba(37,99,235,.25)", transition: "opacity 0.2s",
   },
 
   linkBtn: {

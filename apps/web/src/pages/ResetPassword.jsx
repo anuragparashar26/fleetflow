@@ -88,7 +88,6 @@ export default function ResetPassword({ email, onSuccess }) {
     <div style={styles.authPage}>
       <div style={styles.card}>
 
-        <div style={styles.logo}>Fleet<span style={styles.logoAccent}>Flow</span></div>
         <div style={{ fontSize: "20px", fontWeight: "700", color: "#fff", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
           Set New Password <LockIcon size={18} color="#b3aaff" />
         </div>
@@ -171,7 +170,7 @@ export default function ResetPassword({ email, onSuccess }) {
           </div>
         )}
 
-        <button style={styles.btn} onClick={handleReset}>Reset Password →</button>
+        <button style={styles.btn} onClick={handleReset}>Reset Password</button>
 
       </div>
     </div>
