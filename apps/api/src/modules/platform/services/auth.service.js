@@ -13,7 +13,7 @@ const applyPendingWorkspaceInvite = async (clerkUserId) => {
             : ""
 
         if (!invitedWorkspaceId) {
-            return
+            return false
         }
 
         const invitedRoleRaw = typeof metadata.invited_workspace_role === "string"
@@ -55,10 +55,60 @@ const applyPendingWorkspaceInvite = async (clerkUserId) => {
             user_metadata: nextMetadata,
         })
         if (metadataError) throw metadataError
+        return true
     } catch (err) {
         // Do not block profile sync on invite-accept failures.
         console.error("Failed to apply pending workspace invite", err)
+        return false
     }
+}
+
+const ensureDefaultWorkspace = async (userId, email) => {
+    const { data: membership, error: membershipError } = await supabase
+        .from("workspace_members")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle()
+
+    if (membershipError) throw membershipError
+    if (membership) return
+
+    const emailName = String(email || "").split("@")[0].trim()
+    const workspaceName = emailName ? `${emailName}'s Workspace` : "My Workspace"
+    let { data: workspace, error: workspaceError } = await supabase
+        .from("workspaces")
+        .insert([{
+            name: workspaceName,
+            slug: `workspace-${userId}`,
+        }])
+        .select("id")
+        .single()
+
+    if (workspaceError?.code === "23505") {
+        const { data: existingWorkspace, error: existingWorkspaceError } = await supabase
+            .from("workspaces")
+            .select("id")
+            .eq("slug", `workspace-${userId}`)
+            .single()
+        if (existingWorkspaceError) throw existingWorkspaceError
+        workspace = existingWorkspace
+    } else if (workspaceError) {
+        throw workspaceError
+    }
+
+    const { error: insertMembershipError } = await supabase
+        .from("workspace_members")
+        .upsert(
+            [{
+                workspace_id: workspace.id,
+                user_id: userId,
+                role: "owner",
+            }],
+            { onConflict: "workspace_id,user_id", ignoreDuplicates: true }
+        )
+
+    if (insertMembershipError) throw insertMembershipError
 }
 
 export const syncUser = async (req) => {
@@ -108,7 +158,10 @@ export const syncUser = async (req) => {
 
     if (error) throw error
 
-    await applyPendingWorkspaceInvite(clerkUserId)
+    const joinedInvitedWorkspace = await applyPendingWorkspaceInvite(clerkUserId)
+    if (!joinedInvitedWorkspace) {
+        await ensureDefaultWorkspace(clerkUserId, mergedProfile.email)
+    }
 
     return data
 }
