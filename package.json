@@ -12,6 +12,7 @@
     "dev:web": "npm run dev -w @project-a/web",
     "dev:api": "npm run dev -w @project-a/api",
     "build": "npm run build -w @project-a/web",
+    "prisma:generate:vercel": "prisma generate --schema packages/db/prisma/schema.prisma",
     "lint": "npm run lint -w @project-a/web",
     "preview": "npm run preview -w @project-a/web",
     "prisma:generate": "npm run prisma:generate -w @project-a/db",

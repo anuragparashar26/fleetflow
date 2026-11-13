@@ -190,7 +190,7 @@ Deploy `apps/web` and `apps/api` as two separate Vercel projects from this repos
 ### API project
 
 - Root Directory: `apps/api`
-- Build Command: leave blank
+- Build Command: `npm run build`
 - Environment variables:
   - `SUPABASE_URL`
   - `SUPABASE_SECRET_KEY`
