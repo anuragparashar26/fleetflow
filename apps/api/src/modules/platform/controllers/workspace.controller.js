@@ -16,6 +16,25 @@ function buildError(status, message) {
   return error;
 }
 
+async function getAvailableSlug(baseSlug) {
+  let slug = baseSlug;
+  let suffix = 2;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return slug;
+
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+}
+
 export const listWorkspaces = async (req, res, next) => {
   try {
     const { data: memberships, error: membershipError } = await supabase
@@ -62,10 +81,11 @@ export const createWorkspace = async (req, res, next) => {
       throw buildError(400, "name is required");
     }
 
-    const slug = slugify(providedSlug || name);
-    if (!slug) {
+    const requestedSlug = slugify(providedSlug || name);
+    if (!requestedSlug) {
       throw buildError(400, "Valid workspace slug could not be generated");
     }
+    const slug = await getAvailableSlug(requestedSlug);
 
     const { data, error } = await supabase
       .from("workspaces")
@@ -73,7 +93,12 @@ export const createWorkspace = async (req, res, next) => {
       .select("*")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "23505" && error.message?.includes("workspaces_slug_key")) {
+        throw buildError(409, "That workspace name is already being created. Please try again.");
+      }
+      throw error;
+    }
 
     const { error: memberError } = await supabase
       .from("workspace_members")

@@ -2,7 +2,6 @@ import supabase from "../../../utils/supabaseClient.js";
 import { assertWorkspaceRole, resolveWorkspaceContext } from "../../../utils/workspaceContext.js";
 import { logEvent as audit } from "../services/audit.service.js";
 import { createNotification as notify } from "../services/notification.service.js";
-import clerkClient from "../../../utils/clerkClient.js";
 
 const VALID_ROLES = ["owner", "admin", "manager", "member"];
 
@@ -109,17 +108,15 @@ export const addMember = async (req, res, next) => {
       } else {
         const redirectUrl = `${process.env.FRONTEND_ORIGIN || "http://localhost:5173"}/register`;
 
-        await clerkClient.invitations.createInvitation({
-          emailAddress: emailInput,
-          notify: true,
-          ignoreExisting: true,
-          redirectUrl,
-          publicMetadata: {
+        const { error: invitationError } = await supabase.auth.admin.inviteUserByEmail(emailInput, {
+          redirectTo: redirectUrl,
+          data: {
             invited_workspace_id: context.workspaceId,
             invited_workspace_role: role,
             invited_by: req.user.id,
           },
         });
+        if (invitationError) throw invitationError;
 
         res.status(202).json({
           data: {

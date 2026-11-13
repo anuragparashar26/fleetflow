@@ -83,6 +83,12 @@ export default function DashboardPage({
   // ── Fleet data (mount + 15s polling, guarded by the "active" flag) ────────
   const fetchAll = useCallback(
     async (isActive = () => true) => {
+      if (workspacesLoading || workspaces.length === 0) {
+        setLoading(false);
+        setLoadError("");
+        return;
+      }
+
       try {
         const token = await getAuthToken();
         const ws = workspaceId || undefined;
@@ -120,12 +126,19 @@ export default function DashboardPage({
         if (isActive()) setLoading(false);
       }
     },
-    [getAuthToken, workspaceId]
+    [getAuthToken, workspaceId, workspaces, workspacesLoading]
   );
 
   useEffect(() => {
     let active = true;
     const isActive = () => active;
+
+    if (workspacesLoading || workspaces.length === 0) {
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
 
     if (!hasLoadedRef.current) setLoading(true);
     fetchAll(isActive);
@@ -139,7 +152,7 @@ export default function DashboardPage({
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [fetchAll]);
+  }, [fetchAll, workspaces, workspacesLoading]);
 
   // ── Workspaces ─────────────────────────────────────────────────────────────
   const loadWorkspaces = useCallback(async () => {
@@ -673,7 +686,7 @@ function MembersModal({ workspaceId, getToken, darkMode = false, onClose }) {
   const handleAdd = async () => {
     const value = identity.trim();
     if (!value) {
-      setError("Enter an email or Clerk user ID.");
+      setError("Enter an email or Supabase user ID.");
       return;
     }
     setBusy(true);
@@ -775,7 +788,7 @@ function MembersModal({ workspaceId, getToken, darkMode = false, onClose }) {
                 color: theme.inputText,
               }}
               type="text"
-              placeholder="Email or Clerk user ID"
+              placeholder="Email or Supabase user ID"
               value={identity}
               onChange={(e) => setIdentity(e.target.value)}
             />

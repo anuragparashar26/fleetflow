@@ -24,7 +24,7 @@ export default function MissingConfigScreen() {
       >
         <h1 style={{ margin: "0 0 8px", fontSize: "20px", color: "#0F172A" }}>App Configuration Missing</h1>
         <p style={{ margin: "0 0 10px", color: "#334155", fontSize: "14px" }}>
-          Add VITE_CLERK_PUBLISHABLE_KEY in root .env and restart the dev server.
+          Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in apps/web/.env and restart the dev server.
         </p>
         <pre
           style={{
@@ -37,7 +37,8 @@ export default function MissingConfigScreen() {
             overflowX: "auto",
           }}
         >
-{`VITE_CLERK_PUBLISHABLE_KEY=pk_test_...`}
+{`VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...`}
         </pre>
       </div>
     </div>

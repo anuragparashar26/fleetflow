@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useCallback, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LoaderIcon, LogoutIcon } from "./icons";
+import { supabase } from "../utils/supabaseClient";
 
 const NAV_ITEMS = [
   { path: "/fleet/dashboard", label: "Dashboard", icon: "⊙", exact: true },
@@ -24,7 +24,10 @@ export default function Sidebar({
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [savedName, setSavedName] = useState("");
-  const { getToken } = useAuth();
+  const getToken = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  }, []);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -44,7 +47,7 @@ export default function Sidebar({
         if (data?.full_name) setSavedName(data.full_name);
         else if (data?.username) setSavedName(data.username);
       } catch {
-        // Fallback to Clerk-derived display name.
+        // Fall back to the authenticated user's Supabase metadata.
       }
     };
 
@@ -53,7 +56,7 @@ export default function Sidebar({
 
   // Name priority:
   // 1. Supabase full_name
-  // 2. Clerk fullName / firstName
+  // 2. Auth metadata
   // 3. Email prefix (sahilraj from sahilraj@gmail.com)
 
   const email = user?.primaryEmailAddress?.emailAddress || "";

@@ -1,25 +1,16 @@
-import { verifyToken } from "@clerk/backend"
 import { loadEnv } from "./loadEnv.js";
+import supabase from "./supabaseClient.js";
 
 loadEnv();
 
 async function verifyJwt(token) {
-  try {
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
-    })
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) throw new Error("Invalid or expired token");
 
-    return {
-      id: payload.sub,
-      email: payload.email,
-      // workspace_id:
-      //   payload.workspace_id || payload.org_role || null,
-      // role:
-      //   payload.role || payload.org_role || 'member',
-    }
-  } catch (err) {
-    throw new Error('Invalid or expired token')
-  }
+  return {
+    id: data.user.id,
+    email: data.user.email,
+  };
 }
 
 export { verifyJwt };

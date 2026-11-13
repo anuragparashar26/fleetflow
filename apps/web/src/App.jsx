@@ -1,8 +1,7 @@
 
-import { useEffect, useState } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "./utils/supabaseClient";
 
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
@@ -16,9 +15,24 @@ import ProfilePage from "./pages/ProfilePage";
 import { syncUserProfile } from "./utils/platformApi";
 
 export default function App() {
-  const { isSignedIn, user, isLoaded } = useUser();
-  const { signOut, getToken } = useAuth();
+  const [session, setSession] = useState(undefined);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isLoaded = session !== undefined;
+  const isSignedIn = Boolean(session?.user);
+  const user = useMemo(() => session?.user
+    ? {
+      id: session.user.id,
+      primaryEmailAddress: { emailAddress: session.user.email || "" },
+      fullName: session.user.user_metadata?.full_name || "",
+      firstName: session.user.user_metadata?.first_name || "",
+      imageUrl: session.user.user_metadata?.avatar_url || null,
+    }
+    : null, [session]);
+  const getToken = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  }, []);
 
   const [successMsg, setSuccessMsg] = useState("");
   const [resetEmail, setResetEmail] = useState("");
@@ -27,7 +41,7 @@ export default function App() {
   const toggleDarkMode = () => setDarkMode((v) => !v);
 
   const handleLogout = async () => {
-    await signOut();
+    await supabase.auth.signOut();
     navigate("/", { replace: true });
   };
 
@@ -65,6 +79,14 @@ export default function App() {
     ) : (
       <Navigate to="/login" replace />
     );
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!isSignedIn || !user?.id) return;
@@ -176,7 +198,7 @@ export default function App() {
       <Route
         path="/register"
         element={
-          isSignedIn ? (
+          isSignedIn && !location.hash.includes("type=invite") ? (
             <Navigate to="/fleet/dashboard" replace />
           ) : (
             <RegisterPage
@@ -207,21 +229,7 @@ export default function App() {
       <Route
         path="/reset"
         element={
-          isSignedIn ? (
-            <Navigate to="/fleet/dashboard" replace />
-          ) : (
-            <ResetPage resetEmail={resetEmail} onSuccess={handleResetSuccess} />
-          )
-        }
-      />
-
-      <Route
-        path="/sso-callback/*"
-        element={
-          <AuthenticateWithRedirectCallback
-            signInFallbackRedirectUrl="/fleet/dashboard"
-            signUpFallbackRedirectUrl="/fleet/dashboard"
-          />
+          <ResetPage resetEmail={resetEmail} onSuccess={handleResetSuccess} />
         }
       />
 

@@ -1,12 +1,12 @@
 import supabase from "../../../utils/supabaseClient.js"
-import clerkClient from "../../../utils/clerkClient.js"
 
 const VALID_ROLES = ["owner", "admin", "manager", "member"]
 
 const applyPendingWorkspaceInvite = async (clerkUserId) => {
     try {
-        const clerkUser = await clerkClient.users.getUser(clerkUserId)
-        const metadata = clerkUser?.publicMetadata || {}
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(clerkUserId)
+        if (userError) throw userError
+        const metadata = userData.user?.user_metadata || {}
 
         const invitedWorkspaceId = typeof metadata.invited_workspace_id === "string"
             ? metadata.invited_workspace_id.trim()
@@ -51,9 +51,10 @@ const applyPendingWorkspaceInvite = async (clerkUserId) => {
         delete nextMetadata.invited_workspace_role
         delete nextMetadata.invited_by
 
-        await clerkClient.users.updateUserMetadata(clerkUserId, {
-            publicMetadata: nextMetadata,
+        const { error: metadataError } = await supabase.auth.admin.updateUserById(clerkUserId, {
+            user_metadata: nextMetadata,
         })
+        if (metadataError) throw metadataError
     } catch (err) {
         // Do not block profile sync on invite-accept failures.
         console.error("Failed to apply pending workspace invite", err)

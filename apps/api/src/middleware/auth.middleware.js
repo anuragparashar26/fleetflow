@@ -1,4 +1,4 @@
-// JWT / Clerk authentication middleware
+// Supabase JWT authentication middleware
 import { verifyJwt } from "../utils/jwtVerifier.js";
 
 export default async function authMiddleware(req, res, next) {

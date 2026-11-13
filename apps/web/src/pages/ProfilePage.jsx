@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getProfile, syncProfile } from "../utils/apiClient";
+import { supabase } from "../utils/supabaseClient";
 
 export default function ProfilePage({ user, darkMode = false, onToggleDarkMode, onLogout, onBack }) {
   const [form, setForm] = useState({
@@ -12,7 +12,10 @@ export default function ProfilePage({ user, darkMode = false, onToggleDarkMode, 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const { getToken } = useAuth();
+  const getToken = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  }, []);
 
   const theme = darkMode ? DARK : LIGHT;
 

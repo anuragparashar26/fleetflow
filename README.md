@@ -11,7 +11,7 @@ FleetFlow consolidates logistics operations into one workspace: a shipment kanba
 - **Fleet:** Vehicles, drivers, routes with stops, trip lifecycle, fuel logs, and preventive maintenance plans
 - **Customers & Activities:** Shipper accounts, shipment activities, and an activity log
 - **Workspace Management:** Team collaboration with role-based access control (Owner, Admin, Manager, Member, Viewer)
-- **Authentication:** Clerk-based authentication with workspace isolation
+- **Authentication:** Supabase Auth with workspace isolation
 - **Payouts:** Driver payout records with approval workflow (draft → approved → paid)
 
 ---
@@ -21,7 +21,7 @@ FleetFlow consolidates logistics operations into one workspace: a shipment kanba
 ### Prerequisites
 - Node.js 16+ and npm 7+
 - PostgreSQL database (Supabase recommended)
-- Clerk account for authentication
+- Supabase account for authentication, database, and storage
 - Supabase account for database and storage
 
 ### Installation Steps
@@ -93,7 +93,7 @@ fleetflow/
 │           │   ├── fleet/     # Fleet REST module (routes + controllers)
 │           │   └── platform/  # Auth, workspace, member routes/services
 │           ├── middleware/    # Auth, RBAC, logging, error handling
-│           └── utils/         # Prisma client, Clerk, workspace context
+│           └── utils/         # Prisma client, Supabase, workspace context
 │
 ├── packages/
 │   ├── db/            # Prisma ORM & Database (26 models)
@@ -116,7 +116,7 @@ fleetflow/
 | Backend | Node.js + Express | REST API server |
 | Database | PostgreSQL (Supabase) | Data storage |
 | ORM | Prisma | Schema, migrations, and runtime queries (nested writes, transactions) |
-| Auth | Clerk | User authentication |
+| Auth | Supabase Auth | User authentication |
 | Styling | CSS + inline styles | UI styling |
 
 ---
