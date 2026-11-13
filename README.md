@@ -173,6 +173,34 @@ npm run lint             # Run ESLint
 node scripts/fleet-smoke.mjs   # Run data-layer smoke test (needs SMOKE_DATABASE_URL)
 ```
 
+## Vercel Deployment
+
+Deploy `apps/web` and `apps/api` as two separate Vercel projects from this repository.
+
+### Frontend project
+
+- Root Directory: `apps/web`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Environment variables:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_PUBLISHABLE_KEY`
+  - `VITE_API_BASE_URL=https://your-api-project.vercel.app`
+
+### API project
+
+- Root Directory: `apps/api`
+- Build Command: leave blank
+- Environment variables:
+  - `SUPABASE_URL`
+  - `SUPABASE_SECRET_KEY`
+  - `DATABASE_URL`
+  - `FRONTEND_ORIGIN=https://your-web-project.vercel.app`
+
+The API is exposed under `/api/v1` and uses `apps/api/api/index.js` as its Vercel serverless entrypoint.
+
+After deployment, add the frontend URL to Supabase Auth's allowed redirect URLs and configure the frontend's `VITE_API_BASE_URL` with the deployed API URL.
+
 ---
 
 ## Troubleshooting

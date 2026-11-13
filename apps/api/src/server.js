@@ -60,6 +60,10 @@ app.use('/api/v1', v1Router);
 app.use(errorHandlerMiddleware);
 
 
-app.listen(port, () => {
-  console.log(`API Listening on http://localhost:${port}/api/v1`);
-})
+if (process.env.VERCEL !== "1") {
+  app.listen(port, () => {
+    console.log(`API Listening on http://localhost:${port}/api/v1`);
+  });
+}
+
+export default app;
