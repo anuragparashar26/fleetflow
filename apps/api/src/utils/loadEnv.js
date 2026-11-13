@@ -28,7 +28,7 @@ export function loadEnv() {
     return true;
   }, false);
 
-  if (!loadedAny) {
+  if (!loadedAny && process.env.VERCEL !== "1") {
     throw new Error(
       "Missing API env file. Create apps/api/.env from apps/api/.env.example."
     );
